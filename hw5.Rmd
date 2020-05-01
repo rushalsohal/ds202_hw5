@@ -1,0 +1,115 @@
+---
+title: 'HW5 Solutions'
+author: "Rushal Sohal; github: rushalsohal"
+date: "4/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+if (!require("readr")) {
+install.packages("readr")
+}
+if (!require("tidyverse")) {
+install.packages("tidyverse")
+}
+if (!require("dplyr")) {
+install.packages("dplyr")
+}
+if (!require("ggplot2")) {
+install.packages("ggplot2")
+}
+if (!require("stringr")) {
+install.packages("stringr")
+}
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(stringr) 
+```
+
+## Liquor Sales in Iowa
+
+# 1. Importing data
+
+```{r}
+al <- readr::read_csv("2019_Iowa_Liquor_Sales.csv")
+al
+```
+
+# 2. Data Cleaning
+
+```{r}
+# a.
+al2 <- al %>% separate("Store Location", sep= "([\\?\\ ])", c(NA, "lat","long"))
+al2$lat <- stringr::str_replace(al2$lat, '\\(', '')
+al2$long <- stringr::str_replace(al2$lat, '\\)', '')
+sample_n(al2, 5)
+
+# b.
+al2$lat <- as.numeric(al2$lat)
+al2$long <- as.numeric(al2$long)
+sample_n(al2, 5)
+
+# c .
+al2 <- al2 %>% separate("Date", sep= "([\\/])", c("month", "day", "year"))
+sample_n(al2, 5)
+
+#extra
+al2$"Bottles Sold" <- as.integer(al2$"Bottles Sold")
+```
+
+# 3. Overview
+
+```{r}
+# a
+ggplot(na.omit(al2), aes(x=lat, y=long)) + geom_point() + coord_fixed()
+
+#b
+al2 %>%
+  filter(!is.na(`Category Name`)) %>%
+  group_by(`Category Name`) %>%
+  summarize(volume = sum(`Volume Sold (Gallons)`)) %>%
+  ggplot(aes(x = `Category Name`, y = volume)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme(axis.text.y = element_text(size = 6))
+```
+
+# 4
+.
+```{r}
+al2 %>%
+  group_by(month, day) %>%
+  summarize(num_sales = n(), total_volume = sum(`Volume Sold (Gallons)`), total_money =     sum(`Sale (Dollars)`)) %>% 
+  arrange(desc(total_volume))
+
+al2 %>% summarise("num_sales" = sum(`Bottles Sold`),"volume_liquor" = sum(`Volume Sold (Liters)`), "spent" = sum(`Sale (Dollars)`))
+```
+
+
+# 5
+```{r}
+ggplot(al2 %>% filter(year == 2019), aes(x=day, y="Volume Sold (Liters)")) + geom_point() + geom_smooth()+ facet_wrap(~month)
+```
+
+There's more of a trend to buy alcohol over the weekends.
+
+# 6
+
+Fall football dates:
+
+8/31/2019
+9/14/2019
+9/21/2019
+10/5/2019
+10/26/2019 
+11/16/2019
+11/232019
+
+People tend to purchase more for home football games. Moreover, more alcohol was purchased over the Homecoming week (10/26/2019)
+
